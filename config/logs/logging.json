@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "formatters": {
+    "simple": {
+      "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    }
+  },
+
+  "handlers": {
+    "console": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "simple",
+      "stream": "ext://sys.stdout"
+    },
+
+    "info_file_handler": {
+      "class": "logging.handlers.TimedRotatingFileHandler",
+      "level": "DEBUG",
+      "formatter": "simple",
+      "filename": "../logs/root.log",
+      "encoding": "utf-8",
+      "interval": 1
+    },
+
+    "runner_handler": {
+      "class": "logging.handlers.TimedRotatingFileHandler",
+      "level": "DEBUG",
+      "formatter": "simple",
+      "filename": "../logs/runner",
+      "encoding": "utf-8",
+      "interval": 1
+    },
+
+    "kiwoom_handler": {
+      "class": "logging.handlers.TimedRotatingFileHandler",
+      "level": "DEBUG",
+      "formatter": "simple",
+      "filename": "../logs/kiwoom.log",
+      "encoding": "utf-8",
+      "interval": 1
+    }
+  },
+
+  "root": {
+    "level": "INFO",
+    "handlers": ["console", "info_file_handler"]
+  },
+  "loggers": {
+    "runner.BaseRunner": {
+      "level": "DEBUG",
+      "handlers": ["runner_handler"],
+      "propagate": true
+    },
+    "trade.KiwoomTrader": {
+      "level": "DEBUG",
+      "handlers": ["kiwoom_handler"],
+      "propagate": true
+    }
+  }
+}
