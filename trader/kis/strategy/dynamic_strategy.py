@@ -1,9 +1,7 @@
-import asyncio
 import logging
 import time
 import math
 import numpy as np
-import pandas as pd
 
 import trader.analyze.analysis_utils as analysis
 from trader.kis.chart.chart import BaseChart

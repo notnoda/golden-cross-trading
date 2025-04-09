@@ -102,7 +102,6 @@ def add_analyze_sma(df, length=5):
 def get_analyze_sma(df, length=5):
     return ta.sma(df["close"], length)
 
-
 def get_corr_val(x, y):
     correlation_matrix = np.corrcoef(x, y)
     return correlation_matrix
