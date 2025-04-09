@@ -88,6 +88,10 @@ def math_test():
 
     print(sar_slopes[-5:])
 
+    a = -0.0134
+    b = -0.0056
+    print(a + b)
+
     '''
     recent_angles = [math.degrees(math.atan(sar_slopes[i])) for i in range(-10, 0)]
     print(recent_angles)
