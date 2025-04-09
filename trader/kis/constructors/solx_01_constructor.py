@@ -16,8 +16,8 @@ class SolxFirstConstructor(BaseConstructor):
                 exchange=config["exchange"],
                 order_qty=int(config["order_qty"])
             ),
-            storage=ApiChart(code=config["stock_long"], name=config["socket_long"]),
-            short_code=config["stock_short"]
+            storage_long=ApiChart(code=config["stock_long"], name=config["socket_long"]),
+            storage_shrt=ApiChart(code=config["stock_short"], name=config["socket_short"])
         )
 
 # end of class SolxFirstConstructor

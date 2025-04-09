@@ -81,7 +81,7 @@ class IchimokuStrategy(BaseStrategy):
 
     def get_last_data(self, tick_size):
         data = analysis.add_ichimoku_base(self.__storage_long.get_df(tick_size)).iloc[-1]
-        data["median"] = (data["high"] - data["low"]) / 2.0
+        data["median"] = (data["high"] + data["low"]) / 2.0
         return data
 
     def get_reference_value(self, data):

@@ -83,6 +83,9 @@ class ApiChart(BaseChart):
         self.__code = code
         self.__name = name
 
+        next_day = datetime.datetime.now() + datetime.timedelta(days=1)
+        self.__CLOSE_TIME = next_day.strftime("%Y%m%d0350")
+
     def get_stock_code(self): return self.__code
 
     def get_df(self, tick_size):
@@ -107,4 +110,4 @@ class ApiChart(BaseChart):
 
     def is_closed(self):
         curr_time = datetime.datetime.now().strftime('%Y%m%d%H%M')
-        return curr_time >= "202504090350"
+        return curr_time >= self.__CLOSE_TIME
