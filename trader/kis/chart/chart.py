@@ -17,6 +17,9 @@ class BaseChart:
     def get_df(self, tick_size): pass
 
     @abstractmethod
+    def get_last(self): pass
+
+    @abstractmethod
     def get_length(self): pass
 
     @abstractmethod
@@ -48,6 +51,8 @@ class MinuteChart(BaseChart):
 
         return pd.DataFrame(data)
 
+    def get_last(self): pass
+
     def get_length(self): return 1000
 
     def is_closed(self): return self.check_closed(self.__last_time)
@@ -62,6 +67,8 @@ class TickChart(BaseChart):
     def get_stock_code(self): return self.__code
 
     def get_df(self, tick_size): return self.__storage.get_tick_data(tick_size)
+
+    def get_last(self): pass
 
     def get_length(self): return self.__storage.get_order_seq_no()
 
@@ -89,6 +96,10 @@ class ApiChart(BaseChart):
         })
 
         return df
+
+    def get_last(self):
+        url = f"{self.__api_url}/stock-last/{self.__name}"
+        return requests.get(url).json()
 
     def get_length(self):
         url = f"{self.__api_url}/stock-length/{self.__name}"

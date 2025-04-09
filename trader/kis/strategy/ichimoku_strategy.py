@@ -10,11 +10,12 @@ class IchimokuStrategy(BaseStrategy):
     __TICK_SMALL = 30
     __TICK_LARGE = 120
 
-    def __init__(self, stock_order, storage, short_code):
+    def __init__(self, stock_order, storage_long, storage_shrt):
         super().__init__(stock_order)
-        self.__storage: BaseChart = storage
-        self.__long_code = storage.get_stock_code()
-        self.__shrt_code = short_code
+        self.__storage_long: BaseChart = storage_long
+        self.__storage_shrt: BaseChart = storage_shrt
+        self.__long_code = storage_long.get_stock_code()
+        self.__shrt_code = storage_shrt.get_stock_code()
 
     def execute(self):
         logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> IchimokuStrategy ready")
@@ -48,7 +49,7 @@ class IchimokuStrategy(BaseStrategy):
         tick_count = self.__TICK_LARGE * analysis.get_min_tick_count()
 
         while True:
-            if self.__storage.get_length() >= tick_count: break
+            if self.__storage_long.get_length() >= tick_count: break
             time.sleep(60)
 
     ################################################################################
@@ -56,50 +57,95 @@ class IchimokuStrategy(BaseStrategy):
     ################################################################################
     def __call_position(self):
         while True:
-            if self.__storage.is_closed(): return None
+            if self.__storage_long.is_closed(): return None
 
-            ref_small = self.get_reference_value(self.__TICK_SMALL) * 3
-            ref_large = self.get_reference_value(self.__TICK_LARGE)
+            stock_code = None
+            data_small = self.get_last_data(self.__TICK_SMALL)
+            data_large = self.get_last_data(self.__TICK_LARGE)
+
+            ref_small = self.get_reference_value(data_small) * 3
+            ref_large = self.get_reference_value(data_large)
             ref_val = ref_small + ref_large
 
             if ref_val > 0 and ref_small > ref_large:
-                self.buy_stock(self.__long_code)
-                return self.__long_code
+                stock_code = self.__long_code
             elif ref_val < 0 and ref_small < ref_large:
-                self.buy_stock(self.__shrt_code)
-                return self.__shrt_code
+                stock_code = self.__shrt_code
 
-    def get_reference_value(self, tick_size):
-        data = analysis.add_ichimoku_base(self.__storage.get_df(tick_size)).iloc[-1]
-        median = (data["high"] - data["low"]) / 2.0
+            if stock_code is not None:
+                print(data_small, data_large, ref_small, ref_large)
+                self.buy_stock(stock_code)
+                return stock_code
+
+            time.sleep(0.5)
+
+    def get_last_data(self, tick_size):
+        data = analysis.add_ichimoku_base(self.__storage_long.get_df(tick_size)).iloc[-1]
+        data["median"] = (data["high"] - data["low"]) / 2.0
+        return data
+
+    def get_reference_value(self, data):
+        median = data["median"]
         return (median - data["ichimoku_base"]) / median
+
+    def print(self, data_small, data_large, ref_small, ref_large):
+        logging.info(f"small: {data_small['high']}\t{data_small['low']}\t{data_small['median']}\t{data_small['ichimoku_base']}\t{ref_small}")
+        logging.info(f"lager: {data_large['high']}\t{data_large['low']}\t{data_large['median']}\t{data_large['ichimoku_base']}\t{ref_large}")
 
     ################################################################################
     # 주식을 매도 한다.
     ################################################################################
     def __put_long_position(self, stock_code):
+        cut_price = self.__purchase_price * 0.995
+
         while True:
-            if self.__storage.is_closed(): return True
+            if self.__storage_long.is_closed(): return True
 
-            ref_small = self.get_reference_value(self.__TICK_SMALL) * 3
-            ref_large = self.get_reference_value(self.__TICK_LARGE)
+            # 손절
+            data = self.__storage_long.get_last()
+            if data["stock_price"] <= cut_price:
+                self.sell_stock(stock_code)
+                return False
+
+            data_small = self.get_last_data(self.__TICK_SMALL)
+            data_large = self.get_last_data(self.__TICK_LARGE)
+
+            ref_small = self.get_reference_value(data_small) * 3
+            ref_large = self.get_reference_value(data_large)
+
             ref_val = ref_small + ref_large
+            diff_val = abs(ref_large - ref_small)
 
-            if ref_val < 0 and ref_small < ref_large:
+            if ref_val < 0 and ref_small < ref_large and diff_val < 0.05:
+                print(data_small, data_large, ref_small, ref_large)
                 self.sell_stock(stock_code)
                 return False
 
             time.sleep(0.5)
 
     def __put_short_position(self, stock_code):
+        cut_price = self.__purchase_price * 0.995
+
         while True:
-            if self.__storage.is_closed(): return True
+            if self.__storage_long.is_closed(): return True
 
-            ref_small = self.get_reference_value(self.__TICK_SMALL) * 3
-            ref_large = self.get_reference_value(self.__TICK_LARGE)
+            # 손절
+            data = self.__storage_shrt.get_last()
+            if data["stock_price"] <= cut_price:
+                self.sell_stock(stock_code)
+                return False
+
+            data_small = self.get_last_data(self.__TICK_SMALL)
+            data_large = self.get_last_data(self.__TICK_LARGE)
+
+            ref_small = self.get_reference_value(data_small) * 3
+            ref_large = self.get_reference_value(data_large)
+
             ref_val = ref_small + ref_large
+            diff_val = abs(ref_small - ref_large)
 
-            if ref_val > 0 and ref_small > ref_large:
+            if ref_val > 0 and ref_small > ref_large and diff_val < 0.05:
+                print(data_small, data_large, ref_small, ref_large)
                 self.sell_stock(stock_code)
                 return False
 
