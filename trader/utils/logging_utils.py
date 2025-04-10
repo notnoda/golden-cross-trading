@@ -30,11 +30,11 @@ def console_logger(log_path: str):
 # Log 정보를 설정 한다.
 ################################################################################
 def file_logger(log_path: str):
-    current_time = datetime.datetime.now().strftime("-%Y%m%d%H%M%S")
+    current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] - %(message)s",
-        filename=f"{log_path}{current_time}.log",  # 로그를 파일로 저장
+        filename=f"{log_path}-{current_time}.log",  # 로그를 파일로 저장
         filemode="w"
     )
 
