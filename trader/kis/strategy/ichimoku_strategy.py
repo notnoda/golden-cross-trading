@@ -9,6 +9,7 @@ class IchimokuStrategy(BaseStrategy):
     __TICK_LONG = [ 30, 120 ]
     __TICK_SHRT = [ 15, 60 ]
 
+    __DELAY_TIME = 120
     __WEIGHT_VAL = 2
     __HOLDING_VAL = 0.005
 
@@ -29,7 +30,7 @@ class IchimokuStrategy(BaseStrategy):
             while True:
                 stock_code = self.__call_position(self.__storage_long, self.__TICK_LONG)
                 if stock_code is None: break
-                time.sleep(30)
+                time.sleep(self.__DELAY_TIME)
 
                 if stock_code == self.__long_code:
                     if self.__put_position(self.__storage_long, self.__TICK_LONG): break
@@ -37,7 +38,7 @@ class IchimokuStrategy(BaseStrategy):
                     if self.__put_position(self.__storage_shrt, self.__TICK_SHRT): break
                 else:
                     break
-                time.sleep(30)
+                time.sleep(self.__DELAY_TIME)
         except Exception as e:
             print(e)
             logging.error(e)
@@ -86,7 +87,8 @@ class IchimokuStrategy(BaseStrategy):
     # 주식을 매도 한다.
     ################################################################################
     def __put_position(self, storage, ticks):
-        cut_price = self.get_purchase_price() * (100.0 - self.__HOLDING_VAL)
+        cap_price = self.get_purchase_price() * self.__HOLDING_VAL
+        cut_price = self.get_purchase_price() - cap_price
         stock_code = storage.get_stock_code()
 
         while True:

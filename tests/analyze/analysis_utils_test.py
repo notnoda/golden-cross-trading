@@ -55,50 +55,16 @@ def get_corr_val():
 
 
 def test_df():
-    #df = utils.add_ichimoku_base(adata.get_test_df())
 
-    #for index, row in df.iterrows():
-    #    print(f"{index}:\t{row['close']}\t{row['ichimoku_base']}")
+    items = [
+        {"id": 1, "name": "apple", "price": 1000, "xhms": "130000"},
+        {"id": 2, "name": "banana", "price": 1500, "xhms": "130000"},
+        {"id": 3, "name": "orange", "price": 2000, "xhms": "130000"},
+    ]
 
-    #data_df = df.iloc[-3:]
-    #print(data_df.iloc[0]["open"])
-
-    #for i in range(-1, -10, -1): print(i)
-
-    data = [10, 20, 30, 40, 50]
-    for i in range(len(data) - 1, -1, -1): print(data[i])
-
-    '''
-    data = np.array([10, 15, 23, 30, 42])
-    differences = np.diff(data)
-    print(differences)  # [5 8 7 12]
-
-    data = np.array([10, 20, 30, 40, 50])
-    average = np.mean(data)
-    print(average)  # 30.0
-
-    data = np.array([10, 20, 30, 40, 50])
-    std_dev = np.std(data, ddof=1)  # 샘플 표준편차 (Bessel's correction 적용)
-    print(std_dev)  # 15.811388300841896
-    '''
-
-def math_test():
-    angle_threshold = 30  # 기준 각도
-    sar_slopes = [10, 15, 20, 25, 30]
-
-    print(sar_slopes[-5:])
-
-    a = -0.0134
-    b = -0.0056
-    print(a + b)
-
-    '''
-    recent_angles = [math.degrees(math.atan(sar_slopes[i])) for i in range(-10, 0)]
-    print(recent_angles)
-
-    strong_trend_count = sum(1 for angle in recent_angles if angle > angle_threshold)
-    print(strong_trend_count)
-    '''
+    df = pd.DataFrame(items)
+    df = df.drop(index=range(2))
+    print(df)
 
 if __name__ == "__main__":
-    math_test()
+    test_df()
