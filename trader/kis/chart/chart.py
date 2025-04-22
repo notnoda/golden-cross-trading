@@ -8,7 +8,6 @@ from abc import abstractmethod
 
 class BaseChart:
     __close_time = "155500"
-    __last_time = "000000"
 
     @abstractmethod
     def get_stock_code(self): pass
@@ -28,6 +27,7 @@ class BaseChart:
     def check_closed(self, last_time): return last_time > self.__close_time
 
 class MinuteChart(BaseChart):
+    __last_time = "000000"
 
     def __init__(self, code, exchange):
         super().__init__()

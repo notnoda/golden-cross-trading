@@ -109,6 +109,21 @@ def get_corr_val(x, y):
 ################################################################################
 # 일목균형표 값을 반환 한다.
 ################################################################################
+def add_ichimoku(df):
+    ichimoku_base = get_ichimoku_val(df["high"], df["low"], 26)
+    ichimoku_conv = get_ichimoku_val(df["high"], df["low"], 9)
+    ichimoku_span1 = ((ichimoku_base + ichimoku_conv) / 2.).shift(25)
+    ichimoku_span2 = get_ichimoku_val(df["high"], df["low"], 52).shift(25)
+
+    df["ichimoku_base"] = ichimoku_base # 기준선
+    df["ichimoku_conv"] = ichimoku_conv # 전환선
+    df["ichimoku_span1"] = ichimoku_span1 # 선행스팬1
+    df["ichimoku_span2"] = ichimoku_span2 # 선행스팬2
+    return df
+
+def get_ichimoku_val(high_vals, low_vals, period):
+    return (high_vals.rolling(window=period).max() + low_vals.rolling(window=period).min()) / 2.
+
 def add_ichimoku_base(df, base_period=26):
     df["ichimoku_base"] = get_ichimoku_base(df, base_period)
     return df
