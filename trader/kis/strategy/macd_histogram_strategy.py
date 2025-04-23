@@ -75,12 +75,15 @@ class MacdHistogramStrategy(BaseStrategy):
 
     def __is_upward_trend(self, storage, minute):
         data = analysis.add_analyze_macd(storage.get_df(minute))["macd_histo"]
-        return data.iloc[-2] < data.iloc[-1]
+        return data.iloc[-2] < data.iloc[-1] and data.iloc[-1] > 0
 
     def __is_upward_trends(self, storage, minute):
         data = analysis.add_analyze_macd(storage.get_df(minute))["macd_histo"]
-        logging.info(f"[{data.iloc[-3]}][{data.iloc[-2]}][{data.iloc[-1]}]")
-        return data.iloc[-3] < data.iloc[-2] < data.iloc[-1]
+        if data.iloc[-3] < data.iloc[-2] < data.iloc[-1] and data.iloc[-1] > 0:
+            logging.info(f"[{data.iloc[-3]}][{data.iloc[-2]}][{data.iloc[-1]}]")
+            return True
+        else:
+            return False
 
     def __get_lowest_point(self, storage, minute):
         df = analysis.add_analyze_macd(storage.get_df(minute))
@@ -116,12 +119,15 @@ class MacdHistogramStrategy(BaseStrategy):
 
     def __is_downward_trend(self, storage, minute):
         data = analysis.add_analyze_macd(storage.get_df(minute))["macd_histo"]
-        return data.iloc[-2] > data.iloc[-1]
+        return data.iloc[-2] > data.iloc[-1] and data.iloc[-1] < 0
 
     def __is_downward_trends(self, storage, minute):
         data = analysis.add_analyze_macd(storage.get_df(minute))["macd_histo"]
-        logging.info(f"[{data.iloc[-3]}][{data.iloc[-2]}][{data.iloc[-1]}]")
-        return data.iloc[-3] > data.iloc[-2] > data.iloc[-1]
+        if data.iloc[-3] > data.iloc[-2] > data.iloc[-1] and data.iloc[-1] < 0:
+            logging.info(f"[{data.iloc[-3]}][{data.iloc[-2]}][{data.iloc[-1]}]")
+            return True
+        else:
+            return False
 
     def __get_highest_point(self, storage, minute):
         df = analysis.add_analyze_macd(storage.get_df(minute))
