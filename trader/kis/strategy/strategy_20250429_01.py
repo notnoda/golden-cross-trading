@@ -14,31 +14,15 @@ from trader.kis.strategy1.base_strategy import BaseStrategy
 
 class Strategy_20250429_01(BaseStrategy):
     __DELAY_TIME = 10
-    __TICK_WEIGHT = [
-        [ 10, 0.05 ],
-        [ 20, 0.08 ],
-        [ 30, 0.10 ],
-        [ 40, 0.20 ],
-        [ 50, 0.25 ],
-        [ 60, 0.32 ]
-    ]
-    __TICKS_BUY = [[10, 20, 30, 40, 50, 60], [10, 20, 30]]
-    __TICKS_SHRT = [[10, 20, 30], [10]]
 
     def __init__(self, stock_order, storage_min_long, storage_min_shrt, storage_api_long, storage_api_shrt):
         super().__init__(stock_order)
-
+        self.__stock_long = storage_api_long.get_stock_code()
+        self.__stock_shrt = storage_api_shrt.get_stock_code()
         self.__storages = [
             [ storage_min_long, storage_api_long, [10, 20, 30, 40, 50, 60] ],
             [ storage_min_shrt, storage_api_shrt, [10, 20, 30] ],
         ]
-
-        self.__storage_min_long = storage_min_long
-        self.__storage_min_shrt = storage_min_shrt
-        self.__storage_api_long = storage_api_long
-        self.__storage_api_shrt = storage_api_shrt
-        self.__stock_long = storage_api_long.get_stock_code()
-        self.__stock_shrt = storage_api_shrt.get_stock_code()
 
     def execute(self):
         logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Strategy ready")
@@ -53,9 +37,9 @@ class Strategy_20250429_01(BaseStrategy):
                 time.sleep(self.__DELAY_TIME)
 
                 if stock_code == self.__stock_long:
-                    if self.__put_position(self.__storages[0][1], self.__storages[0][2]): break
+                    if self.__put_position(self.__storages[0][1], [10, 20, 30]): break
                 elif stock_code == self.__stock_shrt:
-                    if self.__put_position(self.__storages[1][1], self.__storages[1][2]): break
+                    if self.__put_position(self.__storages[1][1], [10]): break
                 else:
                     break
                 time.sleep(self.__DELAY_TIME)
