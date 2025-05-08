@@ -31,6 +31,7 @@ def add_analyze_macd(df):
 
 def get_analyze_macd(df):
     macd_df = ta.macd(df["close"], fast=12, slow=26, signal=9)
+    middles = []
     diffs = []
     indexs = []
     prev_histo = np.nan
@@ -38,6 +39,8 @@ def get_analyze_macd(df):
     index_val = np.nan
 
     for index, row in macd_df.iterrows():
+        middles.append((row["MACD_12_26_9"] + row["MACDs_12_26_9"]) / 2.0)
+
         if math.isnan(row['MACDh_12_26_9']) or math.isnan(prev_histo):
             diffs.append(np.nan)
             indexs.append(np.nan)
@@ -60,6 +63,7 @@ def get_analyze_macd(df):
         "macd_val": macd_df["MACD_12_26_9"],
         "macd_signal": macd_df["MACDs_12_26_9"],
         "macd_histo": macd_df["MACDh_12_26_9"],
+        "macd_middle": middles,
         "macd_diff": diffs,
         "macd_index": indexs,
     })
