@@ -1,0 +1,28 @@
+# C:\_resources\golden-cross\config\kis-trading-real.yaml
+# 파일 정보
+secret_path: "C:/_resources/golden-cross/config/db-trading-secret.yaml" # 토큰 경로(f)
+log_path: "C:/_resources/golden-cross/logs/db-trading" # 로그경로
+
+# 계좌정보
+account_no: "64859119" # 계좌번호(f)
+product_no: "01"       # 계좌상품번호(f)
+
+# 시장분류코드(FY:뉴욕, FN:나스닥, FA:아멕스)
+market_code: "FA"
+
+# 주식코드
+stock_long:  "SOXL" # SOXL 005930
+stock_short: "SOXS" # SOXS 000660
+
+# Websocket tr_key 정보
+socket_long:  "RAMSSOXL" # RAMSSOXL 005930
+socket_short: "RAMSSOXS" # RAMSSOXS 000660
+
+# 틱 갯수
+tick_macd:  "466"
+tick_long:  "68"
+tick_short: "34"
+
+# 주문 정보
+exchange:  "AMEX" # NASD:나스닥, NYSE:뉴욕, AMEX:아멕스
+order_qty: "1"    # 주문수량

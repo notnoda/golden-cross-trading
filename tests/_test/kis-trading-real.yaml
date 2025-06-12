@@ -1,0 +1,32 @@
+# C:\_resources\golden-cross\config\kis-trading-real.yaml
+# URL정보
+mode: "real"
+
+# Appkey(f), Appsecret(f)
+app_key:    "PSWMSkis4i7AuuVORXJEy3lBz1K3M9WPO9kQ"
+app_secret: "GU3mRHLNCprNtX3pzPVMXI9FKs+/jh84jbaYLQddVIMeJPm1Kc9cIaxEu+C7Q6dLxHGYxLYwroyOujv/BOng5KJKmnRAIRsDyCgzRlspKAcwqS4h+htbE/CYnzuMnPLd+M0nwv+/LnD+dkD6vD0wbKDyAspvhtI8yFfhUNH81KDzK8VE+nk="
+
+# 파일 정보
+token_path: "C:/_resources/golden-cross/config/kis-token-real.yaml" # 토큰 경로(f)
+log_path:   "C:/_resources/golden-cross/logs/kis-trading" # 로그경로
+
+# 계좌정보
+account_no: "64859119" # 계좌번호(f)
+product_no: "01"       # 계좌상품번호(f)
+
+# 주식코드
+stock_long:  "SOXL" # SOXL 005930
+stock_short: "SOXS" # SOXS 000660
+
+# Websocket tr_key 정보
+socket_long:  "RAMSSOXL" # RAMSSOXL 005930
+socket_short: "RAMSSOXS" # RAMSSOXS 000660
+
+# 틱 갯수
+tick_macd:  "466"
+tick_long:  "68"
+tick_short: "34"
+
+# 주문 정보
+exchange:  "AMEX" # NASD:나스닥, NYSE:뉴욕, AMEX:아멕스
+order_qty: "1"    # 주문수량
