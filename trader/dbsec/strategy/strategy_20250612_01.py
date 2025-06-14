@@ -74,10 +74,12 @@ class StrategyAverages(BaseStrategy):
         return ((averages[1] - averages[2]) / averages[2]) <= ((averages[2] - averages[3]) / averages[3])
 
     async def __buy_stock(self, stock_code):
-        await api.order_buy(self.__config, stock_code)
-        price = await api.inquiry_price(self.__config, stock_code)
-        price["stock_code"] = stock_code
-        return price
+        data = await api.order_buy(self.__config, stock_code)
+        stock_price = await api.transaction_amount(self.__config, stock_code, data["OrdNo"])
+
+        data["stock_code"] = stock_code
+        data["stock_price"] = stock_price
+        return data
 
     ################################################################################
     # 주식을 매도 한다.
@@ -88,11 +90,11 @@ class StrategyAverages(BaseStrategy):
 
         while True:
             #TODO - 마감여부 정의
-            data = await api.inquiry_price(self.__config, stock_code)
-            price = float(data["Oprc"])
+            df = api.chart_tick(self.__config, stock_code, self.__tick_size)
+            price = float(df.iloc[-2]["close"])
+            #price = float(data["Oprc"])
             if price >= profit_price or price <= loss_price: return self.__sell_stock(stock_code)
 
-            df = api.chart_tick(self.__config, stock_code, self.__tick_size)
             if self.__si_declining(df):
                 await self.__sell_stock(stock_code)
                 return False
