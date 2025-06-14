@@ -5,7 +5,7 @@ def read_config(filename):
     with open(filename, encoding="UTF-8") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
-    config["today"] = datetime.now().strftime("%Y%m%d")
+    config["today"] = "20250613" #TODO - datetime.now().strftime("%Y%m%d")
     return add_secret(config)
 
 def add_secret(config):

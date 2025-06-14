@@ -1,51 +1,34 @@
 import logging
 import time
 import trader.analyze.analysis_utils as analysis
-import trader.dbsec.api.overseas_chart as chart
+import trader.dbsec.api.api_overseas as api
 
 from trader.dbsec.base.base_strategy import BaseStrategy
 
-'''
-    - 매수 조건 (Buy Signal)
-      현재 캔들이 각각의 틱봉(10틱, 20틱, 60틱)의 일목균형표 구름대 상단 위에 있음
-      즉: 현재 종가 > max(선행스팬1, 선행스팬2)
-      선행 구름(예: 미래 26틱) 동안 양운(적운)만 존재함
-      즉: 선행스팬1 > 선행스팬2 for 모든 미래 i
+class StrategyAverages(BaseStrategy):
+    __DELAY_TIME = 3
+    __PROFIT_RATE = 1.04
+    __LOSS_RATE = 0.998
+    __WINDOWS = range(10, 121, 10)
 
-    - 매도 조건 (Sell Signal)
-      10틱봉과 20틱봉의 현재 캔들이 구름대 하단 아래에 있음
-      즉: 현재 종가 < min(선행스팬1, 선행스팬2)
-'''
-
-class strategy_20250612_01(BaseStrategy):
-    __TICK_BUY = [ [ 10, 20, 60 ], [ 5, 10, 30 ] ]
-    __TICK_SEL = [ [ 10, 20 ],  [ 5, 10 ] ]
-
-    __DELAY_TIME = 10
-    __WEIGHT_VAL = 2
-    __HOLDING_VAL = 0.005
-
-    def __init__(self, config, storage_shrt):
+    def __init__(self, config):
         super().__init__()
         self.__config = config
-        self.__market_code = config[""]
-        self.__stock_code = config[""]
-        self.__tick_size = config[""]
+        self.__stock_long = config["stock_long"]
+        self.__stock_shrt = config["stock_short"]
+        self.__tick_size = config["tick_size"]
 
     def execute(self):
-
         try:
             while True:
-                stock_code = self.__call_position()
-                if stock_code is None: break
+                price = self.__call_position()
+                if price is None: break
                 time.sleep(self.__DELAY_TIME)
 
-                if stock_code == self.__storages[0].get_stock_code():
-                    if self.__put_position(self.__storages[0], self.__TICK_SEL[0]): break
-                elif stock_code == self.__storages[1].get_stock_code():
-                    if self.__put_position(self.__storages[1], self.__TICK_SEL[1]): break
-                else:
-                    break
+                stock_code = price["stock_code"]
+                stock_price = float(price["Oprc"])
+
+                if self.__put_position(stock_code, stock_price): break
                 time.sleep(self.__DELAY_TIME)
         except Exception as e:
             print(e)
@@ -57,62 +40,67 @@ class strategy_20250612_01(BaseStrategy):
     ################################################################################
     # 매수 시점을 판단 한다.
     ################################################################################
-    def __call_position(self):
-        tick_count = len(ticks)
+    async def __call_position(self):
 
         while True:
-            index = 0
+            #TODO - 마감여부 정의
+            df = api.chart_tick(self.__config, self.__stock_long, self.__tick_size)
+            if self.__is_rising(df): return await self.__buy_stock(self.__stock_long)
+            if self.__si_declining(df): return await self.__buy_stock(self.__stock_shrt)
+            time.sleep(self.__DELAY_TIME)
 
-            for storage in self.__storages:
-                if storage.is_closed(): return None
-                buy_count = 0
-                time.sleep(1)
+        #TODO - return None
 
-                ticks = self.__TICK_BUY[index]
-                index += 1
+    def __is_rising(self, df):
+        averages = [10000]
+        index = 1
 
-                for tick_size in ticks:
-                    time.sleep(0.5)
-                    if self.__is_buy(storage, tick_size): buy_count += 1
+        for size in self.__WINDOWS:
+            averages.append(analysis.get_moving_average_ema(df, size)[-1])
+            if averages[index] >= averages[index - 1]: return False
+            index += 1
 
-                if tick_count == buy_count:
-                    self.buy_stock(storage.get_stock_code())
-                    return storage.get_stock_code()
+        return ((averages[1] - averages[2]) / averages[2]) > ((averages[2] - averages[3]) / averages[3])
 
-            time.sleep(0.5)
+    def __si_declining(self, df):
+        averages = [10000]
+        index = 1
 
-    def __is_buy(self, storage, tick_size):
-        ticks = chart.chart_tick(self.__config, self.__market_code, self.__stock_code, self.__tick_size)
+        for size in self.__WINDOWS:
+            averages.append(analysis.get_moving_average_ema(df, size)[-1])
+            if averages[index] <= averages[index - 1]: return False
+            index += 1
 
-        # 마지막 캔들의 종가 일목균형표 구름대 상단에 위치하는지 확인한다.
-        ldata = tails.tail(1)
-        if ldata["close"] <= max(ldata["ichimoku_span1"], ldata["ichimoku_span2"]): return False
+        return ((averages[1] - averages[2]) / averages[2]) <= ((averages[2] - averages[3]) / averages[3])
 
-        # 최근 20개의 캔들이 양운만 있는지 확인 한다.
-        for data in tails:
-            if data["ichimoku_span1"] <= data["ichimoku_span2"]: return False
-
-        return True
+    async def __buy_stock(self, stock_code):
+        await api.order_buy(self.__config, stock_code)
+        price = await api.inquiry_price(self.__config, stock_code)
+        price["stock_code"] = stock_code
+        return price
 
     ################################################################################
     # 주식을 매도 한다.
     ################################################################################
-    def __put_position(self, storage, ticks):
-        tick_count = len(ticks)
+    async def __put_position(self, stock_code, buy_price):
+        profit_price = buy_price * self.__PROFIT_RATE
+        loss_price = buy_price * self.__LOSS_RATE
 
         while True:
-            if storage.is_closed(): return False
-            sell_count = 0
-            time.sleep(1)
+            #TODO - 마감여부 정의
+            data = await api.inquiry_price(self.__config, stock_code)
+            price = float(data["Oprc"])
+            if price >= profit_price or price <= loss_price: return self.__sell_stock(stock_code)
 
-            for tick_size in ticks:
-                time.sleep(0.5)
+            df = api.chart_tick(self.__config, stock_code, self.__tick_size)
+            if self.__si_declining(df):
+                await self.__sell_stock(stock_code)
+                return False
 
-                data = analysis.add_ichimoku(storage.get_df(tick_size)).tail(1)
-                if data["close"] < min(ldata["ichimoku_span1"], data["ichimoku_span2"]): sell_count += 1
+            time.sleep(self.__DELAY_TIME)
 
-            if tick_count == sell_count:
-                self.sell_stock(storage.get_stock_code())
-                return True
+        #TODO - return True
 
-            time.sleep(0.5)
+    async def __sell_stock(self, stock_code):
+        await api.order_sell(self.__config, stock_code)
+        return

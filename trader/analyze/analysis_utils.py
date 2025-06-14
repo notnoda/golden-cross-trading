@@ -193,3 +193,14 @@ def get_analyze_macd_last(df):
         macd_val=data["MACD_12_26_9"],
         macd_signal=data["MACDs_12_26_9"]
     )
+
+
+def add_moving_average_ema(df, size):
+    df["ema"] = get_moving_average_ema(df["close"], size)
+    return df
+
+def get_moving_average_ema(df, window):
+    return pd.Series(data=df).ewm(span=window, adjust=False).mean()
+
+
+
