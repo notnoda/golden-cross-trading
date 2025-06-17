@@ -2,8 +2,7 @@ import asyncio
 
 import trader.analyze.analysis_utils as analysis
 import trader.dbsec.api.access_token as access_token
-import trader.dbsec.api.overseas_chart as overseas_stock
-import trader.dbsec.api.overseas_order as overseas_order
+import trader.dbsec.api.api_overseas as api
 import trader.dbsec.common.read_config as read_config
 
 ################################################################################
@@ -12,7 +11,7 @@ import trader.dbsec.common.read_config as read_config
 def trading(filename):
     config = preprocessing(filename)
 
-    df = asyncio.run(overseas_stock.chart_tick(config, config["market_code"], config["stock_long"], "100"))
+    df = asyncio.run(api.chart_tick(config, config["stock_long"], "100"))
     df = analysis.add_moving_average_ema(df, 5)
     print(type(df))
     print(df)

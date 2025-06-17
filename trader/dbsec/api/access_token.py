@@ -34,13 +34,13 @@ def read_token(config):
 # 접근 토큰을 발급 받는다.
 ################################################################################
 def get_access_token(config):
-    TEMPLATE = "{0}/oauth2/token?appkey={1}&appsecretkey={2}&grant_type=client_credentials&scope=oob"
-    URL = TEMPLATE.format(config["domain"], config["appkey"], config["secretkey"])
+    template = "{0}/oauth2/token?appkey={1}&appsecretkey={2}&grant_type=client_credentials&scope=oob"
+    url = template.format(config["domain"], config["appkey"], config["secretkey"])
     headers = {
         "content-type": "application/x-www-form-urlencoded",
     }
 
-    res = requests.post(URL, headers=headers, verify=False)
+    res = requests.post(url, headers=headers, verify=False)
     if res.status_code != 200:
         error_message = "Error Code : " + str(res.status_code) + " | " + res.text
         print(error_message)

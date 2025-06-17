@@ -5,6 +5,9 @@ import trader.dbsec.api.api_overseas as api
 
 from trader.dbsec.base.base_strategy import BaseStrategy
 
+# -----------------------------------------------------------------------------
+# StrategyAverages
+# -----------------------------------------------------------------------------
 class StrategyAverages(BaseStrategy):
     __DELAY_TIME = 3
     __PROFIT_RATE = 1.04
@@ -12,11 +15,10 @@ class StrategyAverages(BaseStrategy):
     __WINDOWS = range(10, 121, 10)
 
     def __init__(self, config):
-        super().__init__()
+        super().__init__(config)
         self.__config = config
         self.__stock_long = config["stock_long"]
         self.__stock_shrt = config["stock_short"]
-        self.__order_qty = config["order_qty"]
         self.__tick_size = config["tick_size"]
 
     def execute(self):
@@ -48,11 +50,8 @@ class StrategyAverages(BaseStrategy):
             df = api.chart_tick(self.__config, self.__stock_long, self.__tick_size)
 
             # 매수 여부 확인 후 매수
-            if self.__is_rising(df):
-                return await self.buy_stock(self.__config, self.__stock_long, self.__order_qty)
-            if self.__is_declining(df):
-                return await self.buy_stock(self.__config, self.__stock_shrt, self.__order_qty)
-
+            if self.__is_rising(df): return self.buy_stock(self.__stock_long)
+            if self.__is_declining(df): return self.buy_stock(self.__stock_shrt)
             time.sleep(self.__DELAY_TIME)
 
         return None
@@ -94,12 +93,16 @@ class StrategyAverages(BaseStrategy):
             price = float(df.iloc[-2]["close"])
 
             if price >= profit_price or price <= loss_price:
-                await self.sell_stock(self.__config, stock_code, self.__order_qty)
+                self.sell_stock(stock_code)
                 return False
             if self.__is_declining(df):
-                await self.sell_stock(self.__config, stock_code, self.__order_qty)
+                self.sell_stock(stock_code)
                 return False
 
             time.sleep(self.__DELAY_TIME)
 
         return True
+
+# -----------------------------------------------------------------------------
+# end of class StrategyAverages
+# -----------------------------------------------------------------------------

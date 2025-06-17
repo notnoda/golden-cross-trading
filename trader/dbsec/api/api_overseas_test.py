@@ -16,14 +16,6 @@ def inquiry_price(config, stock_code):
     data = asyncio.run(api.inquiry_price(config, stock_code))
     print(data)
 
-def order_buy(config, stock_code):
-    data = asyncio.run(api.order_market_buy(config, stock_code))
-    print(data)
-
-def order_sell(config, stock_code):
-    data = asyncio.run(api.order_market_sell(config, stock_code))
-    print(data)
-
 def transaction_history(config, stock_code, order_no=1270):
     data = asyncio.run(api.transaction_history(config, stock_code, order_no))
     print(data)
@@ -34,6 +26,6 @@ if __name__ == '__main__':
     config = get_config(filename)
 
     # 매수주문
-    order_sell(config, "SOXL")
+    inquiry_price(config, "SOXL")
 
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> api_overseas test end")

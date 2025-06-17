@@ -1,7 +1,6 @@
 import json
 import pandas as pd
 import requests
-import time
 from pandas.core.interchange.dataframe_protocol import DataFrame
 
 ################################################################################
@@ -24,9 +23,7 @@ async def post(config, path, params):
         print(json.dumps(res.text, ensure_ascii=False, indent=4))
         return None
 
-################################################################################
 # API 헤더
-################################################################################
 def __get_headers(config):
     return {
         "content-type": "application/json; charset=utf-8",
@@ -34,10 +31,6 @@ def __get_headers(config):
         "cont_yn": "",
         "cont_key": "",
     }
-
-################################################################################
-################################################################################
-################################################################################
 
 ################################################################################
 # 현재가 조회
@@ -54,10 +47,6 @@ async def inquiry_price(config, stock_code):
     return await post(config, path, params)
 
 ################################################################################
-################################################################################
-################################################################################
-
-################################################################################
 # 틱봉 조회
 ################################################################################
 async def chart_tick(config, stock_code, tick_size) -> DataFrame:
@@ -70,7 +59,7 @@ async def chart_tick(config, stock_code, tick_size) -> DataFrame:
             "InputHourClsCode": "0",
             "InputCondMrktDivCode": config["market_code"],
             "InputIscd1": stock_code,
-            "InputDate1": config["today"],
+            "InputDate1": config["srtDt"],
             "InputDivXtick": tick_size,
 	    }
 	})
@@ -79,10 +68,6 @@ async def chart_tick(config, stock_code, tick_size) -> DataFrame:
     df = pd.DataFrame(data)
     df.columns = [ "hour", "date", "close", "open", "high", "low", "volumns" ]
     return df
-
-################################################################################
-################################################################################
-################################################################################
 
 ################################################################################
 # 해외주식 주문
@@ -104,39 +89,15 @@ async def order(config, stock_code, tp_code, order_price, order_qty=1):
 
     return await post(config, path, params)
 
-# 시장가 매수
-async def order_market_buy(config, stock_code, order_qty=1):
-    return await __order_market(config, stock_code, "2", order_qty, 1.0)
-
-# 시장가 매도
-async def order_market_sell(config, stock_code, order_qty=1):
-    return await __order_market(config, stock_code, "1", order_qty, -0.4)
-
-# 주식 주문
-async def __order_market(config, stock_code, tp_code, order_qty=1, weight=0.0):
-    prices = await inquiry_price(config, stock_code)
-    order_price = float(prices["Sdpr"]) + weight
-    time.sleep(0.5)
-
-    orders = await order(config, stock_code, tp_code, order_price, order_qty)
-    order_no = int(orders["OrdNo"])
-    time.sleep(0.5)
-
-    histories = await transaction_history(config, stock_code, order_no)
-    if len(histories) == 0: return 0
-    return float(histories[0]["AstkExecAmt"])
-
 ################################################################################
 # 체결내역조회
 ################################################################################
-
-# t
 async def transaction_history(config, stock_code, order_no=None):
     path = "/api/v1/trading/overseas-stock/inquiry/transaction-history"
     params = json.dumps({
         "In": {
-            "QrySrtDt": config["today"], #조회시작일자
-            "QryEndDt": config["today"], #조회종료일자
+            "QrySrtDt": config["srtDt"], #조회시작일자
+            "QryEndDt": config["endDt"], #조회종료일자
             "AstkIsuNo": stock_code, #해외주식종목번호
             "AstkBnsTpCode": "0", #해외주식매매구분코드(0:전체, 1:매도, 2:매수)
             "OrdxctTpCode": "0", #주문체결구분코드(0:전체, 1:체결, 2:미체결)
@@ -152,6 +113,4 @@ async def transaction_history(config, stock_code, order_no=None):
     if order_no is None: return history
     return list(filter(lambda data : data["OrdNo"] == int(order_no), history))
 
-################################################################################
-################################################################################
 ################################################################################

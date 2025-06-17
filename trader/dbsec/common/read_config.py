@@ -1,11 +1,12 @@
 import yaml
-from datetime import datetime
+import trader.commons.utils as utils
 
 def read_config(filename):
     with open(filename, encoding="UTF-8") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
-    config["today"] = datetime.now().strftime("%Y%m%d")
+    config["srtDt"] = utils.get_date()
+    config["endDt"] = utils.add_date(1)
     return add_secret(config)
 
 def add_secret(config):
