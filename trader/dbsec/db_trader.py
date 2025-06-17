@@ -1,5 +1,4 @@
 import asyncio
-import yaml
 
 import trader.analyze.analysis_utils as analysis
 import trader.dbsec.api.access_token as access_token

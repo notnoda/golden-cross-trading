@@ -16,40 +16,46 @@ class StrategyAverages(BaseStrategy):
         self.__config = config
         self.__stock_long = config["stock_long"]
         self.__stock_shrt = config["stock_short"]
+        self.__order_qty = config["order_qty"]
         self.__tick_size = config["tick_size"]
 
     def execute(self):
+        logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Strategy Start")
+
         try:
             while True:
-                price = self.__call_position()
-                if price is None: break
+                data = self.__call_position()
+                if data is None: break
                 time.sleep(self.__DELAY_TIME)
 
-                stock_code = price["stock_code"]
-                stock_price = float(price["Oprc"])
-
-                if self.__put_position(stock_code, stock_price): break
+                if self.__put_position(data[0], data[1]): break
                 time.sleep(self.__DELAY_TIME)
         except Exception as e:
             print(e)
             logging.error(e)
 
-        self.treade_closed()
-        logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DynamicStrategy end")
+        logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Strategy End")
 
     ################################################################################
     # 매수 시점을 판단 한다.
     ################################################################################
     async def __call_position(self):
-
         while True:
-            #TODO - 마감여부 정의
+            # 마감 확인
+            if self.is_closed(): break
+
+            # 틱봉 조회
             df = api.chart_tick(self.__config, self.__stock_long, self.__tick_size)
-            if self.__is_rising(df): return await self.__buy_stock(self.__stock_long)
-            if self.__si_declining(df): return await self.__buy_stock(self.__stock_shrt)
+
+            # 매수 여부 확인 후 매수
+            if self.__is_rising(df):
+                return await self.buy_stock(self.__config, self.__stock_long, self.__order_qty)
+            if self.__is_declining(df):
+                return await self.buy_stock(self.__config, self.__stock_shrt, self.__order_qty)
+
             time.sleep(self.__DELAY_TIME)
 
-        #TODO - return None
+        return None
 
     def __is_rising(self, df):
         averages = [10000]
@@ -62,7 +68,7 @@ class StrategyAverages(BaseStrategy):
 
         return ((averages[1] - averages[2]) / averages[2]) > ((averages[2] - averages[3]) / averages[3])
 
-    def __si_declining(self, df):
+    def __is_declining(self, df):
         averages = [10000]
         index = 1
 
@@ -73,14 +79,6 @@ class StrategyAverages(BaseStrategy):
 
         return ((averages[1] - averages[2]) / averages[2]) <= ((averages[2] - averages[3]) / averages[3])
 
-    async def __buy_stock(self, stock_code):
-        data = await api.order_buy(self.__config, stock_code)
-        stock_price = await api.transaction_amount(self.__config, stock_code, data["OrdNo"])
-
-        data["stock_code"] = stock_code
-        data["stock_price"] = stock_price
-        return data
-
     ################################################################################
     # 주식을 매도 한다.
     ################################################################################
@@ -89,20 +87,19 @@ class StrategyAverages(BaseStrategy):
         loss_price = buy_price * self.__LOSS_RATE
 
         while True:
-            #TODO - 마감여부 정의
+            # 마감 확인
+            if self.is_closed(): break
+
             df = api.chart_tick(self.__config, stock_code, self.__tick_size)
             price = float(df.iloc[-2]["close"])
-            #price = float(data["Oprc"])
-            if price >= profit_price or price <= loss_price: return self.__sell_stock(stock_code)
 
-            if self.__si_declining(df):
-                await self.__sell_stock(stock_code)
+            if price >= profit_price or price <= loss_price:
+                await self.sell_stock(self.__config, stock_code, self.__order_qty)
+                return False
+            if self.__is_declining(df):
+                await self.sell_stock(self.__config, stock_code, self.__order_qty)
                 return False
 
             time.sleep(self.__DELAY_TIME)
 
-        #TODO - return True
-
-    async def __sell_stock(self, stock_code):
-        await api.order_sell(self.__config, stock_code)
-        return
+        return True

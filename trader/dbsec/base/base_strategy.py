@@ -1,5 +1,5 @@
-import asyncio
-import trader.dbsec.api.overseas_order as order
+import trader.commons.utils as utils
+import trader.dbsec.api.api_overseas as api
 
 from trader.base.base_thread import BaseThread
 
@@ -13,31 +13,30 @@ class BaseStrategy(BaseThread):
 
     def __init__(self):
         super().__init__()
+        self.__close_date_time = utils.add_date(1, "%Y%m%d030000")
 
     def execute(self):
         pass
 
     ###########################################################################
-    # 주식의 매수 금액을 반환 한다.
-    ###########################################################################
-    def get_purchase_price(self) -> float: return self.__purchase_price
-
-    ###########################################################################
     # 주식을 매수 한다.
     ###########################################################################
-    def buy_stock(self, stock_code: str):
-        self.__purchase_price = asyncio.run(order.order_buy(stock_code))
+    async def buy_stock(self, config, stock_code, order_qty):
+        order_price = await api.order_market_buy(config, stock_code, order_qty)
+        return (stock_code, order_price)
 
     ###########################################################################
     # 주식을 매도 한다.
     ###########################################################################
-    def sell_stock(self, stock_code: str):
-        asyncio.run(order.order_sell(stock_code))
+    async def sell_stock(self, config, stock_code, order_qty):
+        order_price = await api.order_market_sell(config, stock_code, order_qty)
+        return (stock_code, order_price)
 
     ###########################################################################
     # 주식 거래를 마감 한다.
     ###########################################################################
-    def treade_closed(self):
-        return False
+    def is_closed(self):
+        curr_date_time = utils.get_date("%Y%m%d%H%M%S")
+        return curr_date_time > self.__close_date_time
 
 # end of class BaseStrategy

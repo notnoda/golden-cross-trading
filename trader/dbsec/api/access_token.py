@@ -62,15 +62,3 @@ def write_token(token_path, access_token):
         f.write(f'token_expired: {expired_date.strftime("%Y%m%d%H%M%S")}\n')
 
     return access_token
-
-if __name__ == '__main__':
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> access token start")
-    config = {}
-    config["domain"] = "https://openapi.dbsec.co.kr:8443"
-    config["appkey"] = "PS1P3OIOWi3Su7vW9mL1mXpKfy5njebrUFAV"
-    config["secretkey"] = "3RnDV1inhKS8FhMQ8nqI0lftUtc9xMYI"
-    config["token_path"] = "C:/_resources/golden-cross/config/db-token-real.yaml"
-
-    config = add_access_token(config)
-    print(config)
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> access token end")
