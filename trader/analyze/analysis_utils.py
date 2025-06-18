@@ -194,13 +194,18 @@ def get_analyze_macd_last(df):
         macd_signal=data["MACDs_12_26_9"]
     )
 
+################################################################################
+# 지수이동평균을 반환 한다.
+################################################################################
+def get_moving_average_ema(data, window):
+    return pd.Series(data).ewm(span=window).mean()
 
-def add_moving_average_ema(df, size):
-    df["ema"] = get_moving_average_ema(df["close"], size)
-    return df
+################################################################################
+# 단순이동평균을 반환 한다.
+################################################################################
+def get_moving_average_sma(data, window):
+    return pd.Series(data).rolling(window=window).mean()
 
-def get_moving_average_ema(df, window):
-    return pd.Series(data=df).ewm(span=window, adjust=False).mean()
-
-
-
+################################################################################
+################################################################################
+################################################################################

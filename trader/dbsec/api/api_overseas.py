@@ -60,14 +60,14 @@ async def chart_tick(config, stock_code, tick_size) -> DataFrame:
             "InputCondMrktDivCode": config["market_code"],
             "InputIscd1": stock_code,
             "InputDate1": config["srtDt"],
-            "InputDivXtick": tick_size,
+            "InputDivXtick": str(tick_size),
 	    }
 	})
 
     data = await post(config, path, params)
     df = pd.DataFrame(data)
     df.columns = [ "hour", "date", "close", "open", "high", "low", "volumns" ]
-    return df
+    return df.sort_index(ascending=False)
 
 ################################################################################
 # 해외주식 주문

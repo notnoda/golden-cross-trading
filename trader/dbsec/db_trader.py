@@ -1,31 +1,20 @@
-import asyncio
-
-import trader.analyze.analysis_utils as analysis
 import trader.dbsec.api.access_token as access_token
-import trader.dbsec.api.api_overseas as api
 import trader.dbsec.common.read_config as read_config
+
+from trader.dbsec.strategy.strategy_20250612_01 import StrategyAverages
 
 ################################################################################
 # Trading
 ################################################################################
 def trading(filename):
     config = preprocessing(filename)
-
-    df = asyncio.run(api.chart_tick(config, config["stock_long"], "100"))
-    df = analysis.add_moving_average_ema(df, 5)
-    print(type(df))
-    print(df)
-
-    #constructor = SolxFirstConstructor(filename)
-
-    # 생성
-    #strategy = constructor.get_strategy_object()
+    strategy = StrategyAverages(config)
 
     # 시작
-    #strategy.start()
+    strategy.start()
 
     # 대기
-    #strategy.join()
+    strategy.join()
 
 def preprocessing(filename):
     config = read_config.read_config(filename)

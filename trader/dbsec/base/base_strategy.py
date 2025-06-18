@@ -1,4 +1,3 @@
-import asyncio
 import time
 import trader.commons.utils as utils
 import trader.dbsec.api.api_overseas as api
@@ -9,7 +8,7 @@ from trader.base.base_thread import BaseThread
 # BaseStrategy
 # -----------------------------------------------------------------------------
 class BaseStrategy(BaseThread):
-    __WEIGHT_BUY = 1.0
+    __WEIGHT_BUY = 0.4
     __WEIGHT_SELL = -0.4
 
     # 주식 매수 가격
@@ -27,19 +26,15 @@ class BaseStrategy(BaseThread):
     ###########################################################################
     # 주식을 매매 한다.
     ###########################################################################
-    def buy_stock(self, stock_code):
-        order_price = asyncio.run(
-            self.__order_market(stock_code, "2", self.__order_qty, self.__WEIGHT_BUY)
-        )
+    async def buy_stock(self, stock_code):
+        order_price = await self.__order_market(stock_code, "2", self.__order_qty, self.__WEIGHT_BUY)
         return stock_code, order_price
 
     ###########################################################################
     # 주식을 매도 한다.
     ###########################################################################
-    def sell_stock(self, stock_code):
-        order_price = asyncio.run(
-            self.__order_market(stock_code, "1", self.__order_qty, self.__WEIGHT_SELL)
-        )
+    async def sell_stock(self, stock_code):
+        order_price = self.__order_market(stock_code, "1", self.__order_qty, self.__WEIGHT_SELL)
         return stock_code, order_price
 
     # 주식 주문
