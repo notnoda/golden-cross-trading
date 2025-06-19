@@ -1,3 +1,4 @@
+import logging
 import time
 import trader.commons.utils as utils
 import trader.dbsec.api.api_overseas as api
@@ -28,6 +29,7 @@ class BaseStrategy(BaseThread):
     ###########################################################################
     async def buy_stock(self, stock_code):
         order_price = await self.__order_market(stock_code, "2", self.__order_qty, self.__WEIGHT_BUY)
+        logging.info(f"buy : {stock_code} - {order_price}")
         return stock_code, order_price
 
     ###########################################################################
@@ -35,6 +37,7 @@ class BaseStrategy(BaseThread):
     ###########################################################################
     async def sell_stock(self, stock_code):
         order_price = self.__order_market(stock_code, "1", self.__order_qty, self.__WEIGHT_SELL)
+        logging.info(f"sell : {stock_code} - {order_price}")
         return stock_code, order_price
 
     # 주식 주문

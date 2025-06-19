@@ -1,5 +1,7 @@
 import datetime
 import logging
+import os
+import os.path as path
 
 ################################################################################
 # Log 정보를 설정 한다.
@@ -30,11 +32,17 @@ def console_logger(log_path: str):
 # Log 정보를 설정 한다.
 ################################################################################
 def file_logger(log_path: str):
-    current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    log_file_name = f"{log_path}.log"
+
+    if path.isfile(log_file_name):
+        current_time = datetime.datetime.now().strftime("-%Y%m%d%H%M%S")
+        old_file_name = f"{log_path}{current_time}.log"
+        os.rename(log_file_name, old_file_name)
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] - %(message)s",
-        filename=f"{log_path}-{current_time}.log",  # 로그를 파일로 저장
+        filename=log_file_name,  # 로그를 파일로 저장
         filemode="w"
     )
 

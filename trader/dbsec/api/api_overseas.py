@@ -1,12 +1,19 @@
+import logging
 import json
 import pandas as pd
 import requests
+
 from pandas.core.interchange.dataframe_protocol import DataFrame
+
+# SSL 경고 무시
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 ################################################################################
 # API POST 호출
 ################################################################################
 async def post(config, path, params):
+
     url = config["domain"] + path
     res = requests.post(
         url=url,
@@ -16,8 +23,12 @@ async def post(config, path, params):
     )
 
     if res.status_code == 200:
-        data = json.dumps(res.json(), ensure_ascii=False, indent=4)
-        return json.loads(data)["Out"]
+        try:
+            data = json.dumps(res.json(), ensure_ascii=False, indent=4)
+            return json.loads(data)["Out"]
+        except:
+            logging.error(res)
+            return None
     else:
         print("Error Code : " + str(res.status_code))
         print(json.dumps(res.text, ensure_ascii=False, indent=4))
