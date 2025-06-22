@@ -5,8 +5,12 @@ def read_config(filename):
     with open(filename, encoding="UTF-8") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
-    config["srtDt"] = utils.get_date()
-    config["endDt"] = utils.add_date(1)
+    start_date = config["start_date"] if "start_date" in config else ""
+    config["srtDt"] = utils.get_date() if start_date == "" else start_date
+
+    end_date = config["end_date"] if "end_date" in config else ""
+    config["endDt"] = utils.add_date(1) if end_date == "" else end_date
+
     return add_secret(config)
 
 def add_secret(config):
