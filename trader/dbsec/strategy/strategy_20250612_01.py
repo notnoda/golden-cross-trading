@@ -49,8 +49,6 @@ class StrategyAverages(BaseStrategy):
             # 마감 확인
             if self.is_closed(): break
 
-            await self.buy_stock(self.__stock_long)
-
             # 매수 여부 확인 후 매수
             if await self.__is_rising(): return await self.buy_stock(self.__stock_long)
             if await self.__is_declining(): return await self.buy_stock(self.__stock_shrt)
@@ -101,7 +99,7 @@ class StrategyAverages(BaseStrategy):
     ################################################################################
     async def __put_position(self, stock_code, buy_price):
         max_price = buy_price
-        loss_price = buy_pric8e * self.__LOSS_RATE
+        loss_price = buy_price * self.__LOSS_RATE
 
         while True:
             # 마감 확인
