@@ -44,9 +44,8 @@ class BaseStrategy(BaseThread):
         if len(balances) == 0: return stock_code, 0
 
         order_qty = int(float(balances[0]["AstkOrdAbleQty"]))
-        order_price = await self.__order_market(stock_code, "1", order_qty, self.__WEIGHT_SELL)
-        logging.info(f"sell : {stock_code} - {order_price}")
-        return stock_code, order_price
+        history = await self.__order_market(stock_code, "1", order_qty, self.__WEIGHT_SELL)
+        return float(history["AstkExecPrc"])
 
     # 주식 주문
     async def __order_market(self, stock_code, tp_code, order_qty=1, weight=0.0):
