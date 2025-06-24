@@ -20,12 +20,16 @@ def transaction_history(config, stock_code, order_no=1270):
     data = asyncio.run(api.transaction_history(config, stock_code, order_no))
     print(data)
 
+def inquiry_balance(config, stock_code):
+    data = asyncio.run(api.inquiry_balance(config, "Out"))
+    print(data)
+
 if __name__ == '__main__':
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> api_overseas test start")
     filename = "C:/_resources/golden-cross/config/db-trading.yaml"
     config = get_config(filename)
 
     # 매수주문
-    inquiry_price(config, "SOXL")
+    inquiry_balance(config, "SOXL")
 
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> api_overseas test end")

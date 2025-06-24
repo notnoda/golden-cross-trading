@@ -39,6 +39,8 @@ def file_logger(log_path: str):
         old_file_name = f"{log_path}{current_time}.log"
         os.rename(log_file_name, old_file_name)
 
+    print(f"Get-Content {log_file_name} -Wait -Tail 10")
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] - %(message)s",
