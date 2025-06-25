@@ -156,7 +156,7 @@ async def inquiry_balance(config, name="Out"):
 
     return await post(config, path, params, name)
 
-async def inquiry_balance_qty(config, stock_code):
+async def inquiry_balance_qty(config, stock_code=None):
     path = "/api/v1/trading/overseas-stock/inquiry/balance-margin"
     params = json.dumps({
         "In": {

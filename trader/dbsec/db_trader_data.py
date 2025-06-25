@@ -11,11 +11,13 @@ def trading(filename):
     config = access_token.add_access_token(read_config.read_config(filename))
     df = asyncio.run(api.chart_tick(config, "SOXL", 60))
     df = analysis.add_ichimoku(df)
+    df5 = analysis.get_moving_average_sma(df["close"], 5)
 
     #print(df)
     for index, row in df.iterrows():
         print(f"{index}\t{row['date']}\t{row['hour']}\t{row['open']}\t{row['high']}\t{row['low']}\t{row['close']}\t{row['ichimoku_span1']}\t{row['ichimoku_span2']}")
 
+    print(df5)
 
 if __name__ == '__main__':
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> trading start")

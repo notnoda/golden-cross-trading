@@ -25,13 +25,14 @@ class BaseStrategy(BaseThread):
         pass
 
     ###########################################################################
-    # 주식을 매매 한다.
+    # 주식을 매수 한다.
     ###########################################################################
     async def buy_stock(self, stock_code):
         history = await self.__order_market(stock_code, "2", self.__order_qty, self.__WEIGHT_BUY)
 
         if float(history["AstkOrdRmqty"]) > 0:
             await api.cancel_order(self.__config, stock_code, int(history["OrdNo"]))
+            time.sleep(0.5)
 
         if float(history["AstkExecQty"]) == 0: return None
         else: return float(history["AstkExecPrc"])
@@ -41,24 +42,40 @@ class BaseStrategy(BaseThread):
     ###########################################################################
     async def sell_stock(self, stock_code):
         balances = await api.inquiry_balance_qty(self.__config, stock_code)
+        time.sleep(0.5)
         if len(balances) == 0: return stock_code, 0
 
         order_qty = int(float(balances[0]["AstkOrdAbleQty"]))
-        history = await self.__order_market(stock_code, "1", order_qty, self.__WEIGHT_SELL)
-        return float(history["AstkExecPrc"])
+        data = await self.__order_market(stock_code, "1", order_qty, self.__WEIGHT_SELL)
+        return float(data["AstkExecPrc"])
+
+    ###########################################################################
+    # 모든 주식을 매도 한다.
+    ###########################################################################
+    async def sell_close_all(self):
+        time.sleep(1)
+        balances = await api.inquiry_balance_qty(self.__config)
+        if len(balances) == 0: return
+
+        for data in balances:
+            time.sleep(1)
+            stock_code = data["SymCode"]
+            order_qty = int(float(data["AstkOrdAbleQty"]))
+            await self.__order_market(stock_code, "1", order_qty, self.__WEIGHT_SELL)
 
     # 주식 주문
     async def __order_market(self, stock_code, tp_code, order_qty=1, weight=0.0):
         prices = await api.inquiry_price(self.__config, stock_code)
         order_price = round(float(prices["Prpr"]) + weight, 2)
-        time.sleep(0.5)
+        time.sleep(1)
 
         orders = await api.order(self.__config, stock_code, tp_code, order_price, order_qty)
         order_no = int(orders["OrdNo"])
-        time.sleep(0.5)
+        time.sleep(1)
 
         histories = await api.transaction_history(self.__config, stock_code, order_no)
         history = histories[0]
+        time.sleep(1)
 
         message = f"매매: {tp_code}\t주식코드: {stock_code}"
         message += f"\t현재가: {prices['Prpr']}\t지정가: {order_price}"

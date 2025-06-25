@@ -11,11 +11,13 @@ from trader.dbsec.base.base_strategy import BaseStrategy
 # -----------------------------------------------------------------------------
 class StrategyAverages(BaseStrategy):
     __DELAY_TIME = 3
-    __PROFIT_RATE = 0.96
-    __LOSS_RATE = 0.998
-
-    __TICK1 = [20, [5, 20, 30, 60]]
-    __TICK2 = [120, [5, 10, 20]]
+    __PROFIT_RATE = 0.997
+    __LOSS_RATE = 0.999
+    __SELL_TICK = 20
+    __TICKS = [
+        [20, [5, 10, 20, 30, 60]],
+        [120, [5, 20]]
+    ]
 
     def __init__(self, config):
         super().__init__(config)
@@ -35,6 +37,9 @@ class StrategyAverages(BaseStrategy):
                 flag = asyncio.run(self.__put_position(data[0], data[1]))
                 if flag: break
                 time.sleep(self.__DELAY_TIME)
+
+            # 전체 매도
+            self.sell_close_all()
         except Exception as e:
             print(e)
             logging.error(e)
@@ -50,11 +55,11 @@ class StrategyAverages(BaseStrategy):
             if self.is_closed(): break
 
             # 매수 여부 확인 후 매수
-            if await self.__is_rising():
+            if await self.__checker(self.__is_rising):
                 buy_price = await self.buy_stock(self.__stock_long)
                 if buy_price is not None: return self.__stock_long, buy_price
 
-            if await self.__is_declining():
+            if await self.__checker(self.__is_declining):
                 buy_price = await self.buy_stock(self.__stock_shrt)
                 if buy_price is not None: return self.__stock_shrt, buy_price
 
@@ -62,87 +67,73 @@ class StrategyAverages(BaseStrategy):
 
         return None
 
-    async def __is_rising(self):
-        is_checker = await self.__check_rising(self.__TICK1)
-        if not is_checker: return False
+    async def __is_rising(self, pdata, tdata):
+        return pdata > tdata
 
-        is_checker = await self.__check_rising(self.__TICK2)
-        return is_checker
+    async def __is_declining(self, pdata, tdata):
+        return pdata < tdata
 
-    async def __check_rising(self, ticks):
-        time.sleep(0.5)
-        df = await api.chart_tick(self.__config, self.__stock_long, ticks[0])
-        stock_price = float(df.iloc[-1]["close"])
-        check_prices = [stock_price]
-
-        for size in ticks[1]:
-            avg_price = analysis.get_moving_average_ema(df["close"], size).iloc[-1]
-            if stock_price <= avg_price: return False
-            stock_price = avg_price
-            check_prices.append(stock_price)
-
-        logging.info(check_prices)
+    async def __checker(self, checker):
+        for ticks in self.__TICKS:
+            is_checker = await self.__check_ticks(ticks, checker)
+            if not is_checker: return False
         return True
 
-    async def __is_declining(self):
-        is_checker = await self.__check_declining(self.__TICK1)
-        if not is_checker: return False
-
-        is_checker = await self.__check_declining(self.__TICK2)
-        return is_checker
-
-    async def __check_declining(self, ticks):
-        time.sleep(0.5)
-        df = await api.chart_tick(self.__config, self.__stock_long, ticks[0])
-        stock_price = float(df.iloc[-1]["close"])
-        check_prices = [stock_price]
+    async def __check_ticks(self, ticks, checker):
+        df = await self.__get_tick_data(ticks[0])
+        stock_price = [float(df.iloc[-1])]
+        index = 0
 
         for size in ticks[1]:
-            avg_price = analysis.get_moving_average_ema(df["close"], size).iloc[-1]
-            if stock_price >= avg_price: return False
-            stock_price = avg_price
-            check_prices.append(stock_price)
+            avg_price = analysis.get_moving_average_sma(df, size).iloc[-1]
+            if not checker(stock_price[index], avg_price): return False
+            stock_price.append(stock_price)
+            index += 1
 
-        logging.info(check_prices)
+        logging.info(stock_price)
         return True
+
+    async def __get_tick_data(self, tick_size):
+        time.sleep(0.5)
+        df = await api.chart_tick(self.__config, self.__stock_long, tick_size)
+        return df["close"]
 
     ################################################################################
     # 주식을 매도 한다.
     ################################################################################
     async def __put_position(self, stock_code, buy_price):
         max_price = buy_price
-        loss_price = buy_price * self.__LOSS_RATE
+        #loss_price = buy_price * self.__LOSS_RATE
 
         while True:
             # 마감 확인
             if self.is_closed(): break
 
-            df = await api.chart_tick(self.__config, stock_code, self.__TICK1[0])
+            time.sleep(0.5)
+            df = await api.chart_tick(self.__config, stock_code, self.__SELL_TICK)
             close_price = float(df.iloc[-1]["close"])
 
-            # 익절
             if close_price >= max_price:
                 max_price = close_price
                 continue
-            else:
-                profit_price = max_price * self.__PROFIT_RATE
-                if max_price < profit_price:
-                    logging.info(f"\t매도조건1-\t현재가: {close_price}\t최고가: {max_price}\t익절가: {profit_price}")
-                    return await self.__sell_stock(stock_code)
+
+            # 익절
+            profit_price = max_price * self.__PROFIT_RATE
+            if close_price < profit_price:
+                logging.info(f"\t매도조건1-\t현재가: {close_price}\t최고가: {max_price}\t익절가: {profit_price}")
+                return await self.__sell_stock(stock_code)
 
             # 손절
-            if close_price < loss_price:
-                logging.info(f"\t매도조건2-\t현재가: {close_price}\t손절가: {loss_price}")
-                return await self.__sell_stock(stock_code)
+            #if close_price < loss_price:
+            #    logging.info(f"\t매도조건2-\t현재가: {close_price}\t손절가: {loss_price}")
+            #    return await self.__sell_stock(stock_code)
 
             # 일목균형표와 비교
-            data = analysis.add_ichimoku(df).iloc[-1]
-            min_price = min(data["ichimoku_span1"], data["ichimoku_span2"])
-            if min_price > close_price:
-                logging.info(f"\t매도조건3-\t: 일목가: {min_price}\t현재가: {close_price}")
-                return await self.__sell_stock(stock_code)
-
-            time.sleep(0.5)
+            #data = analysis.add_ichimoku(df).iloc[-1]
+            #min_price = min(data["ichimoku_span1"], data["ichimoku_span2"])
+            #if min_price > close_price:
+            #    logging.info(f"\t매도조건3-\t: 일목가: {min_price}\t현재가: {close_price}")
+            #    return await self.__sell_stock(stock_code)
 
         return True
 
