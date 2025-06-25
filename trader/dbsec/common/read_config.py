@@ -11,6 +11,9 @@ def read_config(filename):
     end_date = config["end_date"] if "end_date" in config else ""
     config["endDt"] = utils.add_date(1) if end_date == "" else end_date
 
+    tick_date = config["tick_date"] if "tick_date" in config else ""
+    config["tickDt"] = utils.add_date(-1) if tick_date == "" else tick_date
+
     return add_secret(config)
 
 def add_secret(config):

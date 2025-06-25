@@ -66,11 +66,11 @@ async def chart_tick(config, stock_code, tick_size) -> DataFrame:
         "In": {
             "InputPwDataIncuYn": "Y",
             "InputOrgAdjPrc": "1",
-            "dataCnt": "",
+            "dataCnt": "500",
             "InputHourClsCode": "0",
             "InputCondMrktDivCode": config["market_code"],
             "InputIscd1": stock_code,
-            "InputDate1": config["srtDt"],
+            "InputDate1": config["tickDt"],
             "InputDivXtick": str(tick_size),
 	    }
 	})
