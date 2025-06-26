@@ -9,7 +9,7 @@ import trader.dbsec.common.read_config as read_config
 ################################################################################
 def trading(filename):
     config = access_token.add_access_token(read_config.read_config(filename))
-    df = asyncio.run(api.chart_tick(config, "SOXL", 20))
+    df = asyncio.run(api.chart_tick(config, "SOXL", 120))
     df = analysis.add_ichimoku(df)
 
     #print(df)
