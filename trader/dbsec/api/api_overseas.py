@@ -24,10 +24,11 @@ async def post(config, path, params, name="Out"):
 
     if res.status_code == 200:
         try:
-            data = json.dumps(res.json(), ensure_ascii=False, indent=4)
-            return json.loads(data)[name]
+            data = json.loads(json.dumps(res.json(), ensure_ascii=False, indent=4))
+            if data["rsp_cd"] != "00000": logging.info(data["rsp_msg"]);
+            return data[name]
         except:
-            logging.error(res)
+            logging.error(f"post: {res}")
             return None
     else:
         print("Error Code : " + str(res.status_code))

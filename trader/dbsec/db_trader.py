@@ -4,14 +4,14 @@ import trader.utils.logging_utils as logger
 import trader.dbsec.api.access_token as access_token
 import trader.dbsec.common.read_config as read_config
 
-from trader.dbsec.strategy.strategy_20250612_01 import StrategyAverages
+from trader.dbsec.strategy.strategy_20250701_01 import TradingStrategy
 
 ################################################################################
 # Trading
 ################################################################################
 def trading(filename):
     config = preprocessing(filename)
-    strategy = StrategyAverages(config)
+    strategy = TradingStrategy(config)
 
     logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> trading start")
     strategy.start() # 시작

@@ -29,26 +29,34 @@ class BaseStrategy(BaseThread):
     # 주식을 매수 한다.
     ###########################################################################
     async def buy_stock(self, stock_code):
+        logging.info("buy_stock start")
         history = await self.__order_market(stock_code, "2", self.__order_qty, self.__WEIGHT_BUY)
 
         if float(history["AstkOrdRmqty"]) > 0:
             await api.cancel_order(self.__config, stock_code, int(history["OrdNo"]))
             time.sleep(0.5)
 
-        if float(history["AstkExecQty"]) == 0: return None
-        else: return float(history["AstkExecPrc"])
+        exec_qty = float(history["AstkExecQty"])
+        exec_prc = float(history["AstkExecPrc"])
+        logging.info("buy_stock end")
+
+        if exec_qty == 0: return None
+        else: return exec_prc
 
     ###########################################################################
     # 주식을 매도 한다.
     ###########################################################################
     async def sell_stock(self, stock_code):
+        logging.info("sell_stock start")
         balances = await api.inquiry_balance_qty(self.__config, stock_code)
         time.sleep(0.5)
         if len(balances) == 0: return stock_code, 0
 
         order_qty = int(float(balances[0]["AstkOrdAbleQty"]))
         data = await self.__order_market(stock_code, "1", order_qty, self.__WEIGHT_SELL)
-        return float(data["AstkExecPrc"])
+        exec_prc = float(data["AstkExecPrc"])
+        logging.info("sell_stock end")
+        return exec_prc
 
     ###########################################################################
     # 모든 주식을 매도 한다.

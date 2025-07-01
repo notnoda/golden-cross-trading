@@ -11,12 +11,11 @@ from trader.dbsec.base.base_strategy import BaseStrategy
 # -----------------------------------------------------------------------------
 class TradingStrategy(BaseStrategy):
     __DELAY_TIME = 3
-    __PROFIT_RATE = 0.998
-    __LOSS_RATE = 0.999
+    __PROFIT_RATE = 1.004
+    __LOSS_RATE = 0.998
     __SELL_TICK = 60
     __TICKS = [
-        [10, [5, 10, 20, 30, 60]],
-        [60, [5, 20]]
+        [60, [5, 10, 20]]
     ]
 
     def __init__(self, config):
@@ -80,47 +79,47 @@ class TradingStrategy(BaseStrategy):
         return True
 
     async def __check_ticks(self, ticks, checker, type):
-        df = await self.__get_tick_data(ticks[0])
+        df = await self.__get_tick_data(self.__stock_long, ticks[0])
+        avg100 = analysis.get_moving_average_sma(df, 100).iloc[-1]
         stock_price = [float(df.iloc[-1])]
         index = 0
 
         for size in ticks[1]:
-            avg_price = analysis.get_moving_average_sma(df, size).iloc[-1]
-            if not checker(stock_price[index], avg_price): return False
-            stock_price.append(avg_price)
+            avgs = analysis.get_moving_average_sma(df, size)
+            prcs = avgs.iloc[-2:]
+            if not checker(prcs[0], avg100): return False
+            if not checker(prcs[0], prcs[1]): return False
+            if not checker(stock_price[index], prcs[0]): return False
+            stock_price.append(prcs[0])
             index += 1
 
-        logging.info(f"{type} - {ticks[0]} - {stock_price}")
+        logging.info(f"\t매수 - {type} - {ticks[0]} - {stock_price}")
         return True
 
-    async def __get_tick_data(self, tick_size):
+    async def __get_tick_data(self, stock_code, tick_size):
         time.sleep(0.5)
-        df = await api.chart_tick(self.__config, self.__stock_long, tick_size)
+        df = await api.chart_tick(self.__config, stock_code, tick_size)
         return df["close"]
 
     ################################################################################
     # 주식을 매도 한다.
     ################################################################################
     async def __put_position(self, stock_code, buy_price):
-        max_price = buy_price
+        profit_price = buy_price * self.__PROFIT_RATE
         loss_price = buy_price * self.__LOSS_RATE
+        prev_diff = 0
 
         while True:
             # 마감 확인
             if self.is_closed(): break
 
             time.sleep(0.5)
-            df = await api.chart_tick(self.__config, stock_code, self.__SELL_TICK)
-            close_price = float(df.iloc[-1]["close"])
-
-            # 고가
-            if close_price >= max_price:
-                max_price = close_price
+            df = await self.__get_tick_data(self.__stock_long, self.__SELL_TICK)
+            close_price = float(df.iloc[-1])
 
             # 익절
-            profit_price = max_price * self.__PROFIT_RATE
-            if close_price < profit_price:
-                logging.info(f"\t매도-익절\t현재가: {close_price}\t최고가: {max_price}\t익절가: {profit_price}")
+            if close_price >= profit_price:
+                logging.info(f"\t매도-익절\t현재가: {close_price}\t익절가: {profit_price}")
                 return await self.__sell_stock(stock_code)
 
             # 손절
@@ -129,18 +128,15 @@ class TradingStrategy(BaseStrategy):
                 return await self.__sell_stock(stock_code)
 
             # 평균선
-            avg5_price = analysis.get_moving_average_sma(df["close"], 5).iloc[-1]
-            avg20_price = analysis.get_moving_average_sma(df["close"], 20).iloc[-1]
-            if avg5_price < avg20_price:
-                logging.info(f"\t매도-평균\t5평가: {avg5_price}\t20평가: {avg20_price}")
+            avg10_price = analysis.get_moving_average_sma(df, 10).iloc[-1]
+            avg60_price = analysis.get_moving_average_sma(df, 60).iloc[-1]
+            avg_diff = abs(avg10_price - avg60_price)
+
+            if prev_diff > avg_diff:
+                logging.info(f"\t매도-평균\t5평가: {avg10_price}\t20평가: {avg60_price}\t차: {prev_diff}\t{avg_diff}")
                 return await self.__sell_stock(stock_code)
 
-            # 일목균형표와 비교
-            #data = analysis.add_ichimoku(df).iloc[-1]
-            #min_price = min(data["ichimoku_span1"], data["ichimoku_span2"])
-            #if min_price > close_price:
-            #    logging.info(f"\t매도조건3-\t: 일목가: {min_price}\t현재가: {close_price}")
-            #    return await self.__sell_stock(stock_code)
+            prev_diff = avg_diff
 
         return True
 
