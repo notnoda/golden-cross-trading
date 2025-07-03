@@ -19,7 +19,7 @@ class BaseStrategy(BaseThread):
         super().__init__()
         self.__config = config
         self.__order_qty = config["order_qty"]
-        self.__close_date_time = utils.add_date(1, "%Y%m%d010000")
+        self.__close_date_time = utils.add_date(1, "%Y%m%d040000")
         #self.__close_date_time = utils.add_date(1, "%Y%m%d030000")
 
     def execute(self):

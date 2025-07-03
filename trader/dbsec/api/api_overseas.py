@@ -29,6 +29,7 @@ async def post(config, path, params, name="Out"):
             return data[name]
         except:
             logging.error(f"post: {res}")
+            logging.error(f"path: {path}")
             return None
     else:
         print("Error Code : " + str(res.status_code))
