@@ -1,7 +1,8 @@
 
 class StockBroker:
 
-    def __init__(self):
+    def __init__(self, rest):
+        self.rest = rest
         return
 
     def buy(self, stock_code, current_price, order_qty = 1, order_price = 0):

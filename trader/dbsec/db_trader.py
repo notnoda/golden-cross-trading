@@ -4,7 +4,7 @@ import trader.utils.logging_utils as logger
 import trader.dbsec.api.access_token as access_token
 import trader.dbsec.common.read_config as read_config
 
-from trader.dbsec.strategy.strategy_20250701_01 import TradingStrategy
+from trader.dbsec.strategy.strategy_20250708_01 import TradingStrategy
 
 ################################################################################
 # Trading
@@ -24,6 +24,11 @@ def preprocessing(filename):
     return access_token.add_access_token(config)
 
 if __name__ == '__main__':
+    num = 25.123456
+    num1 = round(num, 2)
+    print(num1)
+
+
     if len(sys.argv) < 2:
         print("\nconfig 파일경로를 입력해 주세요.")
         sys.exit()
