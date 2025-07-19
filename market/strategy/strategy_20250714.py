@@ -8,19 +8,16 @@ from trader.dbsec.base.base_strategy import BaseStrategy
 # -----------------------------------------------------------------------------
 class TradingStrategy(BaseStrategy):
     __DELAY_TIME = 3
-    __PROFIT_RATE = 1.004
-    __LOSS_RATE = 0.998
-    __SELL_TICK = 60
-    __TICKS = [
-        [60, [5, 10, 20]]
-    ]
+    __TICK_SIZE = 10
+    __BUY_AVERAGES = [5, 10, 15, 20, 25]
+    __SELL_AVERAGES = [5, 10]
 
-    def __init__(self, config, rest):
+    def __init__(self, config, provider):
         super().__init__(config)
         self.__config = config
-        self.__rest = rest
-        self.__stock_long = config["stock_long"]
-        self.__stock_shrt = config["stock_short"]
+        self.provider = provider
+        self.stock_long = ""
+        self.stock_shrt = ""
 
     def __is_over(self, pdata, tdata): return pdata > tdata
     def __is_under(self, pdata, tdata): return pdata < tdata
@@ -29,74 +26,65 @@ class TradingStrategy(BaseStrategy):
     # 매수 시점을 판단 한다.
     ################################################################################
     async def buy_price(self):
-        curr_price = await self.__buy_price("long", self.__is_over)
-        if curr_price > 0: return self.__stock_long, curr_price
+        stock_code = self.stock_long
 
-        curr_price = await self.__buy_price("short", self.__is_under)
-        return self.__stock_shrt, curr_price
+        while True:
+            # 마감 확인
+            if self.is_closed(): return None, None
 
-    async def __buy_price(self, type, compareTo):
-        close_price = 0
+            # 상승장 인지 확인 한다.
+            if await self.__is_trading(stock_code, self.__BUY_AVERAGES, self.__is_over):
+                buy_price = await self.buy_stock(self.stock_long)
+                if buy_price is not None: return self.stock_long, buy_price
 
-        for ticks in self.__TICKS:
-            close_price = await self.__get_tick_price(type, ticks, compareTo)
-            if close_price == 0: return 0
+            # 하락장 인지 확인 한다.
+            if await self.__is_trading(stock_code, self.__BUY_AVERAGES, self.__is_under):
+                buy_price = await self.buy_stock(self.stock_shrt)
+                if buy_price is not None: return self.stock_shrt, buy_price
 
-        return close_price
+    async def __is_trading(self, stock_code, averages, checker):
+        df = await self.__get_tick_data(stock_code, self.__TICK_SIZE)
+        prices = [float(df.iloc[-1])] # 현재 주가
 
-    async def __get_tick_price(self, type, ticks, compareTo):
-        df = await self.__get_close_df(self.__stock_long, ticks[0])
-        avg100 = analysis.get_moving_average_sma(df, 100).iloc[-1]
-        stock_price = [float(df.iloc[-1])]
-        index = 0
+        avg120 = self.__sma_value(df, 120)
+        avg480 = self.__sma_value(df, 480)
+        if not checker(avg480, avg120): return False
 
-        for size in ticks[1]:
-            avgs = analysis.get_moving_average_sma(df, size)
-            prcs = avgs.iloc[-2:]
-            if not compareTo(prcs[0], avg100): return 0
-            if not compareTo(prcs[0], prcs[1]): return 0
-            if not compareTo(stock_price[index], prcs[0]): return 0
-            stock_price.append(prcs[0])
-            index += 1
+        for window in averages:
+            price = self.__sma_value(df, window)
 
-        logging.info(f"\t매수 - {type} - {ticks[0]} - {stock_price}")
-        return stock_price[0]
+            # 이전 평균 선과 비교
+            if not checker(price, prices[-1]): return False
+            prices.append(price)
 
-    async def __get_close_df(self, stock_code, tick_size):
-        df = await self.__rest.chart_tick(stock_code, tick_size)
+        logging.info(f"\t{stock_code}\t1:\t{prices}\t,\t{avg120}\t{avg480}")
+        return True
+
+    async def __get_tick_data(self, stock_code, tick_size):
+        df = await self.provider.chart_tick(stock_code, tick_size)
         return df["close"]
 
+    def __sma_value(self, df, window):
+        avgs = analysis.get_moving_average_sma(df, window)
+        return round(avgs.iloc[-1], 2)
+
     ################################################################################
-    # 매도 시점을 판단 한다.
+    # 주식을 매도 한다.
     ################################################################################
-    async def put_position(self, stock_code, buy_price):
-        profit_price = buy_price * self.__PROFIT_RATE
-        loss_price = buy_price * self.__LOSS_RATE
-        prev_diff = 0
+    async def sell_price(self, stock_code, buy_price):
 
-        df = await self.__get_close_df(self.__stock_long, self.__SELL_TICK)
-        close_price = float(df.iloc[-1])
+        while True:
+            # 마감 확인
+            if self.is_closed(): return True
 
-        # 익절
-        if close_price >= profit_price:
-            logging.info(f"\t매도-익절\t현재가: {close_price}\t익절가: {profit_price}")
-            return True
+            df = await self.__get_tick_data(stock_code, self.__TICK_SIZE)
+            avg5 = self.__sma_value(df, self.__SELL_AVERAGES[0])
+            avg10 = self.__sma_value(df, self.__SELL_AVERAGES[1])
 
-        # 손절
-        if close_price < loss_price:
-            logging.info(f"\t매도-손절\t현재가: {close_price}\t손절가: {loss_price}")
-            return True
-
-        # 평균선
-        avg10_price = analysis.get_moving_average_sma(df, 10).iloc[-1]
-        avg60_price = analysis.get_moving_average_sma(df, 60).iloc[-1]
-        avg_diff = abs(avg10_price - avg60_price)
-
-        if prev_diff > avg_diff:
-            logging.info(f"\t매도-평균\t5평가: {avg10_price}\t20평가: {avg60_price}\t차: {prev_diff}\t{avg_diff}")
-            return True
-
-        return False
+            if avg10 > avg5:
+                logging.info(f"\t매도\t5평선: {avg5}\t10평선: {avg10}")
+                await self.sell_stock(stock_code)
+                return False
 
 # -----------------------------------------------------------------------------
 # end of class TradingStrategy
