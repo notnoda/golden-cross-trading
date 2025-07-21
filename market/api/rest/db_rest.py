@@ -1,11 +1,11 @@
 import logging
 import json
 import requests
+import time
 
 # SSL 경고 무시
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
 
 class DbRest:
 
@@ -14,6 +14,8 @@ class DbRest:
         self.token = token
 
     async def post(self, path, params, name="Out"):
+        time.sleep(0.5)
+
         res = requests.post(
             url=self.get_url(path),
             headers=self.get_header(),

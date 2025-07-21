@@ -18,7 +18,7 @@ class DefaultWorker:
         [60, [5, 10, 20]]
     ]
 
-    def __init__(self, config, rest, broker, provider, strategy):
+    def __init__(self, config, rest, broker, strategy):
         self.__config = config
         self.rest = rest
         self.broker = broker

@@ -27,7 +27,7 @@ class DbOverseasBroker:
         exec_prc = float(history["AstkExecPrc"]) # 매수한 주식 가격
 
         # 체결 된 주식 가격을 반환 한다.
-        return exec_prc if  exec_qty > 0 else None
+        return exec_prc if exec_qty > 0 else None
 
     # 주식을 매도 한다.
     async def sell(self, stock_code, current_price):
@@ -152,3 +152,14 @@ class DbOverseasBroker:
         balances = await self.inquiry_balance("Out2")
         if stock_code is None: return balances
         return list(filter(lambda data : data["SymCode"] == stock_code, balances))
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("\nconfig 파일경로를 입력해 주세요.")
+        sys.exit()
+
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> trading start")
+    print(f"config: [{sys.argv[1]}]")
+    trading(sys.argv[1])
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> trading end")
+
