@@ -1,14 +1,12 @@
-import yaml
+import commons.utils as utils
 import market.api.token.db_token as db_token
-import trader.commons.utils as utils
 
-class DbConfig:
+from market.config.config import BaseConfig
 
-    def __init__(self):
-        return
+class DbConfig(BaseConfig):
 
     def get(self, filename):
-        config = self.get_trading(filename)
+        config = self.get_config(filename, "secret_path")
         config["token"] = self.get_token(config)
 
         tick_date = config["tick_date"] if "tick_date" in config else ""
@@ -17,17 +15,8 @@ class DbConfig:
         return config
 
     def get_token(self, config):
-        return db_token.get_token(config["domain"], config["appkey"], config["secretkey"], config["token_path"])
-
-    def get_trading(self, filename):
-        with open(filename, encoding="UTF-8") as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-
-        config.update(self.get_secret(config["secret_path"]))
-        return config
-
-    def get_secret(self, filename):
-        with open(filename, encoding="UTF-8") as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-
-        return config
+        domain = config["domain"]
+        appkey = config["appkey"]
+        secretkey = config["secretkey"]
+        token_path = config["token_path"]
+        return db_token.get_token(domain, appkey, secretkey, token_path)
