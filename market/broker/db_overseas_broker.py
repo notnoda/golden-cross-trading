@@ -1,13 +1,15 @@
 import logging
 import json
-
 import commons.utils as utils
 
-class DbOverseasBroker:
+from market.base.broker import Broker
+from market.base.rest import Rest
+
+class DbOverseasBroker(Broker):
     __WEIGHT_BUY = 0.4
     __WEIGHT_SELL = -0.4
 
-    def __init__(self, rest, market_code):
+    def __init__(self, rest: Rest, market_code: str):
         self.rest = rest
         self.market_code = market_code
         self.start_dt = utils.get_date()
@@ -43,6 +45,10 @@ class DbOverseasBroker:
 
         # 4. 매도한 주식 가격을 반환 한다.
         return float(data["AstkExecPrc"])
+
+    async def sell_all(self):
+        # TODO - 구현 할 것
+        pass
 
     # 시장가 주문을 한다.
     async def order_market(self, stock_code, tp_code, order_qty=1, weight=0.0):
@@ -152,14 +158,4 @@ class DbOverseasBroker:
         balances = await self.inquiry_balance("Out2")
         if stock_code is None: return balances
         return list(filter(lambda data : data["SymCode"] == stock_code, balances))
-
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("\nconfig 파일경로를 입력해 주세요.")
-        sys.exit()
-
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> trading start")
-    print(f"config: [{sys.argv[1]}]")
-    trading(sys.argv[1])
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> trading end")
 

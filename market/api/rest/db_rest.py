@@ -3,11 +3,13 @@ import json
 import requests
 import time
 
+from market.base.rest import Rest
+
 # SSL 경고 무시
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-class DbRest:
+class DbRest(Rest):
 
     def __init__(self, domain, token):
         self.domain = domain
